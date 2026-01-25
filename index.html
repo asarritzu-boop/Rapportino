@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rapporto Servizio</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#22c55e">
+    <link rel="apple-touch-icon" href="rapporti.png">
+    <style>
+        :root { --bg: #f8fafc; --gray: #64748b; --success: #22c55e; --antonello: #e0f2fe; --giusi: #f3e8ff; }
+        body { font-family: system-ui, sans-serif; background: var(--bg); margin: 0; padding: 10px; display: flex; justify-content: center; }
+        .app-container { width: 100%; max-width: 450px; }
+        .card { background: white; padding: 15px; border-radius: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 12px; }
+        h2 { margin: 0 0 10px 0; color: #1e293b; font-size: 0.9rem; text-transform: uppercase; border-bottom: 1px solid #f1f5f9; padding-bottom: 5px; }
+        
+        /* Dashboard Colori */
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .stat { padding: 12px; border-radius: 12px; text-align: center; border: 1px solid #e2e8f0; }
+        .stat-ant { background: var(--antonello); border-color: #bae6fd; }
+        .stat-giu { background: var(--giusi); border-color: #e9d5ff; }
+        .val { font-size: 1.5rem; font-weight: 800; color: #1e293b; }
+        .gap-container { font-size: 0.75rem; border-top: 1px solid rgba(0,0,0,0.1); margin-top: 5px; padding-top: 5px; }
+        
+        /* Form */
+        label { display: block; margin: 10px 0 4px; font-weight: 600; font-size: 0.8rem; }
+        select, input { width: 100%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px; box-sizing: border-box; }
+        .btn-save { width: 100%; background: var(--success); color: white; border: none; padding: 15px; border-radius: 10px; font-size: 1rem; font-weight: bold; margin-top: 15px; cursor: pointer; }
+        
+        /* Cronologia */
+        .history-item { padding: 8px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; font-size: 0.85rem; }
+        .ant-row { border-left: 4px solid #7dd3fc; padding-left: 8px; margin-bottom: 2px; }
+        .giu-row { border-left: 4px solid #d8b4fe; padding-left: 8px; margin-bottom: 2px; }
+        
+        .btn-action { width: 100%; background: #fff; border: 1px solid #cbd5e1; padding: 8px; border-radius: 8px; font-size: 0.75rem; margin-top: 8px; cursor: pointer; }
+        .positivo { color: #15803d; font-weight: bold; }
+        .negativo { color: #dc2626; }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <div class="card" style="border-top: 5px solid var(--success);">
+        <h2>Totali Annuali</h2>
+        <div class="grid">
+            <div class="stat stat-ant">
+                <label>ANTONELLO</label>
+                <div class="val" id="oreA">0h</div>
+                <div class="gap-container">
+                    <div>GAP 600h: <span id="gap600A">0</span></div>
+                    <div>Media 50h: <span id="gapMediaA">0</span></div>
+                </div>
+            </div>
+            <div class="stat stat-giu">
+                <label>GIUSI</label>
+                <div class="val" id="oreG">0h</div>
+                <div class="gap-container">
+                    <div>GAP 600h: <span id="gap600G">0</span></div>
+                    <div>Media 50h: <span id="gapMediaG">0</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>Inserimento</h2>
+        <label>Mese</label>
+        <select id="mese" onchange="calcola()">
+            <option value="9">Settembre</option><option value="10">Ottobre</option>
+            <option value="11">Novembre</option><option value="12">Dicembre</option>
+            <option value="1">Gennaio</option><option value="2">Febbraio</option>
+            <option value="3">Marzo</option><option value="4">Aprile</option>
+            <option value="5">Maggio</option><option value="6">Giugno</option>
+            <option value="7">Luglio</option><option value="8">Agosto</option>
+        </select>
+        <label>Persona</label>
+        <select id="utente">
+            <option value="Antonello">Antonello</option>
+            <option value="Giusi">Giusi</option>
+        </select>
+        <div class="grid">
+            <div><label>Ore</label><input type="number" id="ore" placeholder="0" inputmode="numeric"></div>
+            <div><label>Abbuoni</label><input type="number" id="abbuoni" placeholder="0" inputmode="numeric"></div>
+        </div>
+        <button class="btn-save" onclick="aggiungiDati()">Salva Rapporto</button>
+    </div>
+
+    <div class="card">
+        <h2 id="titoloCronologia">Dettaglio</h2>
+        <div id="listaStorico"></div>
+        <button class="btn-action" onclick="rimuoviUltimo()">🗑️ Elimina Ultimo</button>
+        <button class="btn-action" onclick="esportaDati()">💾 Esporta Backup</button>
+        <button class="btn-action" onclick="document.getElementById('importFile').click()">📂 Importa Backup</button>
+        <input type="file" id="importFile" style="display:none" onchange="importaDati(event)">
+    </div>
+</div>
+
+<script>
+    if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js'); }
+
+    let db = JSON.parse(localStorage.getItem('rapporto_v7')) || [];
+
+    function calcola() {
+        const mesiServizio = [9, 10, 11, 12, 1, 2, 3, 4, 5, 6, 7, 8];
+        const meseCorrente = new Date().getMonth() + 1;
+        let mesiTrascorsi = mesiServizio.indexOf(meseCorrente) + 1 || 12;
+
+        ["Antonello", "Giusi"].forEach(user => {
+            let totaleOre = 0;
+            mesiServizio.forEach(m => {
+                let oM = db.filter(v => v.utente === user && v.mese == m).reduce((s,v) => s + v.ore, 0);
+                let aM = db.filter(v => v.utente === user && v.mese == m).reduce((s,v) => s + v.abbuoni, 0);
+                totaleOre += (oM < 55) ? Math.min(55, oM + aM) : oM;
+            });
+            const s = user === "Antonello" ? "A" : "G";
+            document.getElementById('ore'+s).innerText = totaleOre + "h";
+            const g600 = totaleOre - 600, gMed = totaleOre - (mesiTrascorsi * 50);
+            document.getElementById('gap600'+s).innerText = (g600 > 0 ? "+" : "") + g600;
+            document.getElementById('gap600'+s).className = g600 >= 0 ? "positivo" : "negativo";
+            document.getElementById('gapMedia'+s).innerText = (gMed > 0 ? "+" : "") + gMed;
+            document.getElementById('gapMedia'+s).className = gMed >= 0 ? "positivo" : "negativo";
+        });
+        aggiornaLista();
+    }
+
+    function aggiornaLista() {
+        const m = document.getElementById('mese').value;
+        const lista = document.getElementById('listaStorico');
+        const dati = db.filter(v => v.mese == m);
+        lista.innerHTML = dati.length ? dati.slice().reverse().map(v => `
+            <div class="history-item ${v.utente === 'Antonello' ? 'ant-row' : 'giu-row'}">
+                <span><b>${v.utente}</b><br><small>${v.timestamp}</small></span>
+                <span style="text-align:right"><b>${v.ore}h</b><br><small>Abb: ${v.abbuoni}</small></span>
+            </div>`).join('') : "Nessun dato.";
+    }
+
+    function aggiungiDati() {
+        const d = new Date();
+        db.push({
+            utente: document.getElementById('utente').value,
+            mese: document.getElementById('mese').value,
+            ore: parseFloat(document.getElementById('ore').value || 0),
+            abbuoni: parseFloat(document.getElementById('abbuoni').value || 0),
+            timestamp: d.getDate()+"/"+(d.getMonth()+1)+" "+d.getHours()+":"+d.getMinutes()
+        });
+        localStorage.setItem('rapporto_v7', JSON.stringify(db));
+        calcola();
+    }
+
+    function esportaDati() {
+        const blob = new Blob([JSON.stringify(db)], {type: 'application/json'});
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'backup.json'; a.click();
+    }
+
+    function importaDati(e) {
+        const file = e.target.files[0];
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+            db = JSON.parse(ev.target.result);
+            localStorage.setItem('rapporto_v7', JSON.stringify(db));
+            calcola();
+            alert("Dati importati!");
+        };
+        reader.readAsText(file);
+    }
+
+    function rimuoviUltimo() { if(confirm("Eliminare?") && db.length) { db.pop(); localStorage.setItem('rapporto_v7', JSON.stringify(db)); calcola(); } }
+
+    window.onload = () => { document.getElementById('mese').value = new Date().getMonth() + 1; calcola(); };
+</script>
+</body>
+</html>
