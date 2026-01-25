@@ -13,6 +13,8 @@
             --success: #22c55e; 
             --antonello-bg: #e0f2fe; 
             --giusi-bg: #f3e8ff; 
+            --antonello-accent: #0ea5e9;
+            --giusi-accent: #a855f7;
             --transition: 0.4s ease;
         }
         
@@ -51,16 +53,24 @@
         
         /* Form */
         label { display: block; margin: 10px 0 4px; font-weight: 600; font-size: 0.8rem; }
-        select, input { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; box-sizing: border-box; font-size: 1rem; background: white; }
+        select, input { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; box-sizing: border-box; font-size: 1rem; background: white; transition: all 0.3s ease; }
+        
+        /* Select Dinamica */
+        #utente.sel-ant { border: 2px solid var(--antonello-accent); background-color: #f0f9ff; }
+        #utente.sel-giu { border: 2px solid var(--giusi-accent); background-color: #faf5ff; }
+
         .btn-save { width: 100%; background: var(--success); color: white; border: none; padding: 15px; border-radius: 10px; font-size: 1rem; font-weight: bold; margin-top: 15px; cursor: pointer; box-shadow: 0 4px 0 #16a34a; }
         .btn-save:active { transform: translateY(2px); box-shadow: 0 2px 0 #16a34a; }
         
         /* Lista */
         .history-item { padding: 10px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; font-size: 0.85rem; }
-        .ant-row { border-left: 5px solid #0ea5e9; background: rgba(14, 165, 233, 0.05); }
-        .giu-row { border-left: 5px solid #a855f7; background: rgba(168, 85, 247, 0.05); }
+        .ant-row { border-left: 5px solid var(--antonello-accent); background: rgba(14, 165, 233, 0.05); }
+        .giu-row { border-left: 5px solid var(--giusi-accent); background: rgba(168, 85, 247, 0.05); }
         
-        .btn-action { width: 100%; background: white; border: 1px solid #cbd5e1; padding: 10px; border-radius: 8px; font-size: 0.75rem; margin-top: 8px; cursor: pointer; }
+        .btn-action { width: 100%; background: white; border: 1px solid #cbd5e1; padding: 10px; border-radius: 8px; font-size: 0.75rem; margin-top: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; }
+        .btn-reset { color: #dc2626; border-color: #fecaca; font-weight: bold; }
+        .btn-reset:active { background: #fee2e2; }
+
         .positivo { color: #15803d; font-weight: bold; }
         .negativo { color: #dc2626; }
     </style>
@@ -120,11 +130,12 @@
     </div>
 
     <div class="card">
-        <h2 id="titoloCronologia">Dettaglio Mensile</h2>
+        <h2 id="titoloCronologia">Gestione Dati</h2>
         <div id="listaStorico"></div>
         <button class="btn-action" onclick="rimuoviUltimo()">🗑️ Elimina Ultimo</button>
         <button class="btn-action" onclick="esportaDati()">💾 Esporta Backup (.json)</button>
         <button class="btn-action" onclick="document.getElementById('importFile').click()">📂 Importa Backup</button>
+        <button class="btn-action btn-reset" onclick="resetAnno()">🔥 RESET NUOVO ANNO</button>
         <input type="file" id="importFile" style="display:none" onchange="importaDati(event)">
     </div>
 </div>
@@ -135,8 +146,16 @@
     let db = JSON.parse(localStorage.getItem('rapporto_v7')) || [];
 
     function cambiaColoreUtente() {
-        const utente = document.getElementById('utente').value;
-        document.body.style.backgroundColor = (utente === "Antonello") ? "var(--antonello-bg)" : "var(--giusi-bg)";
+        const utenteSelect = document.getElementById('utente');
+        const utente = utenteSelect.value;
+        
+        if (utente === "Antonello") {
+            document.body.style.backgroundColor = "var(--antonello-bg)";
+            utenteSelect.className = "sel-ant";
+        } else {
+            document.body.style.backgroundColor = "var(--giusi-bg)";
+            utenteSelect.className = "sel-giu";
+        }
     }
 
     function calcola() {
@@ -179,7 +198,7 @@
             <div class="history-item ${v.utente === 'Antonello' ? 'ant-row' : 'giu-row'}">
                 <span><b>${v.utente}</b><br><small>${v.timestamp}</small></span>
                 <span style="text-align:right"><b>${v.ore}h</b><br><small>Abb: ${v.abbuoni} | St: ${v.studi}</small></span>
-            </div>`).join('') : "<p style='text-align:center; color:gray;'>Nessun dato.</p>";
+            </div>`).join('') : "<p style='text-align:center; color:gray; font-size:0.8rem;'>Nessun dato per questo mese.</p>";
     }
 
     function aggiungiDati() {
@@ -211,17 +230,31 @@
 
     function importaDati(e) {
         const file = e.target.files[0];
+        if(!file) return;
         const reader = new FileReader();
         reader.onload = (ev) => {
-            db = JSON.parse(ev.target.result);
-            localStorage.setItem('rapporto_v7', JSON.stringify(db));
-            calcola();
-            alert("✅ Backup caricato!");
+            try {
+                db = JSON.parse(ev.target.result);
+                localStorage.setItem('rapporto_v7', JSON.stringify(db));
+                calcola();
+                alert("✅ Backup caricato!");
+            } catch(err) { alert("❌ Errore nel caricamento file."); }
         };
         reader.readAsText(file);
     }
 
-    function rimuoviUltimo() { if(confirm("Eliminare ultimo?") && db.length) { db.pop(); localStorage.setItem('rapporto_v7', JSON.stringify(db)); calcola(); } }
+    function rimuoviUltimo() { if(confirm("Eliminare l'ultimo inserimento?") && db.length) { db.pop(); localStorage.setItem('rapporto_v7', JSON.stringify(db)); calcola(); } }
+
+    function resetAnno() {
+        if (confirm("⚠️ SEI SICURO? Questa azione cancellerà TUTTI i dati salvati per iniziare un nuovo anno di servizio.")) {
+            if (confirm("Conferma definitiva: i dati non potranno essere recuperati se non hai un backup.")) {
+                db = [];
+                localStorage.setItem('rapporto_v7', JSON.stringify(db));
+                calcola();
+                alert("🗑️ Dati azzerati. Buon nuovo anno di servizio!");
+            }
+        }
+    }
 
     window.onload = () => { 
         document.getElementById('mese').value = new Date().getMonth() + 1; 
