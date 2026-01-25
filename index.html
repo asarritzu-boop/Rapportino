@@ -3,36 +3,64 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rapporto Servizio</title>
+    <title>Rapporto Servizio PWA</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#22c55e">
     <link rel="apple-touch-icon" href="rapporti.png">
     <style>
-        :root { --bg: #f8fafc; --gray: #64748b; --success: #22c55e; --antonello: #e0f2fe; --giusi: #f3e8ff; }
-        body { font-family: system-ui, sans-serif; background: var(--bg); margin: 0; padding: 10px; display: flex; justify-content: center; }
+        :root { 
+            --bg: #f8fafc; 
+            --success: #22c55e; 
+            --antonello-bg: #e0f2fe; 
+            --giusi-bg: #f3e8ff; 
+            --transition: 0.4s ease;
+        }
+        
+        body { 
+            font-family: system-ui, sans-serif; 
+            background-color: var(--antonello-bg); /* Default Antonello */
+            margin: 0; 
+            padding: 10px; 
+            display: flex; 
+            justify-content: center;
+            transition: background-color var(--transition);
+        }
+
         .app-container { width: 100%; max-width: 450px; }
-        .card { background: white; padding: 15px; border-radius: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 12px; }
+        
+        .card { 
+            background: rgba(255, 255, 255, 0.9); 
+            backdrop-filter: blur(5px);
+            padding: 15px; 
+            border-radius: 16px; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05); 
+            margin-bottom: 12px; 
+            transition: transform var(--transition);
+        }
+
         h2 { margin: 0 0 10px 0; color: #1e293b; font-size: 0.9rem; text-transform: uppercase; border-bottom: 1px solid #f1f5f9; padding-bottom: 5px; }
         
-        /* Dashboard Colori */
+        /* Dashboard */
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .stat { padding: 12px; border-radius: 12px; text-align: center; border: 1px solid #e2e8f0; }
-        .stat-ant { background: var(--antonello); border-color: #bae6fd; }
-        .stat-giu { background: var(--giusi); border-color: #e9d5ff; }
+        .stat { padding: 12px; border-radius: 12px; text-align: center; border: 1px solid rgba(0,0,0,0.05); }
+        .stat-ant { background: #bae6fd; }
+        .stat-giu { background: #e9d5ff; }
         .val { font-size: 1.5rem; font-weight: 800; color: #1e293b; }
-        .gap-container { font-size: 0.75rem; border-top: 1px solid rgba(0,0,0,0.1); margin-top: 5px; padding-top: 5px; }
+        .mese-label { font-size: 0.8rem; font-weight: bold; color: #0369a1; margin-bottom: 5px; }
+        .gap-container { font-size: 0.75rem; border-top: 1px solid rgba(0,0,0,0.1); margin-top: 5px; padding-top: 5px; line-height: 1.4; }
         
         /* Form */
         label { display: block; margin: 10px 0 4px; font-weight: 600; font-size: 0.8rem; }
-        select, input { width: 100%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px; box-sizing: border-box; }
-        .btn-save { width: 100%; background: var(--success); color: white; border: none; padding: 15px; border-radius: 10px; font-size: 1rem; font-weight: bold; margin-top: 15px; cursor: pointer; }
+        select, input { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; box-sizing: border-box; font-size: 1rem; background: white; }
+        .btn-save { width: 100%; background: var(--success); color: white; border: none; padding: 15px; border-radius: 10px; font-size: 1rem; font-weight: bold; margin-top: 15px; cursor: pointer; box-shadow: 0 4px 0 #16a34a; }
+        .btn-save:active { transform: translateY(2px); box-shadow: 0 2px 0 #16a34a; }
         
-        /* Cronologia */
-        .history-item { padding: 8px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; font-size: 0.85rem; }
-        .ant-row { border-left: 4px solid #7dd3fc; padding-left: 8px; margin-bottom: 2px; }
-        .giu-row { border-left: 4px solid #d8b4fe; padding-left: 8px; margin-bottom: 2px; }
+        /* Lista */
+        .history-item { padding: 10px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; font-size: 0.85rem; }
+        .ant-row { border-left: 5px solid #0ea5e9; background: rgba(14, 165, 233, 0.05); }
+        .giu-row { border-left: 5px solid #a855f7; background: rgba(168, 85, 247, 0.05); }
         
-        .btn-action { width: 100%; background: #fff; border: 1px solid #cbd5e1; padding: 8px; border-radius: 8px; font-size: 0.75rem; margin-top: 8px; cursor: pointer; }
+        .btn-action { width: 100%; background: white; border: 1px solid #cbd5e1; padding: 10px; border-radius: 8px; font-size: 0.75rem; margin-top: 8px; cursor: pointer; }
         .positivo { color: #15803d; font-weight: bold; }
         .negativo { color: #dc2626; }
     </style>
@@ -40,12 +68,13 @@
 <body>
 
 <div class="app-container">
-    <div class="card" style="border-top: 5px solid var(--success);">
-        <h2>Totali Annuali</h2>
+    <div class="card" style="border-top: 6px solid var(--success);">
+        <h2 style="color: var(--success);">Totali Annuali (Obiettivo 600h)</h2>
         <div class="grid">
             <div class="stat stat-ant">
                 <label>ANTONELLO</label>
                 <div class="val" id="oreA">0h</div>
+                <div class="mese-label">Mese: <span id="meseA">0</span>/55h</div>
                 <div class="gap-container">
                     <div>GAP 600h: <span id="gap600A">0</span></div>
                     <div>Media 50h: <span id="gapMediaA">0</span></div>
@@ -54,6 +83,7 @@
             <div class="stat stat-giu">
                 <label>GIUSI</label>
                 <div class="val" id="oreG">0h</div>
+                <div class="mese-label">Mese: <span id="meseG">0</span>/55h</div>
                 <div class="gap-container">
                     <div>GAP 600h: <span id="gap600G">0</span></div>
                     <div>Media 50h: <span id="gapMediaG">0</span></div>
@@ -63,8 +93,8 @@
     </div>
 
     <div class="card">
-        <h2>Inserimento</h2>
-        <label>Mese</label>
+        <h2>Nuovo Inserimento</h2>
+        <label>Mese di riferimento</label>
         <select id="mese" onchange="calcola()">
             <option value="9">Settembre</option><option value="10">Ottobre</option>
             <option value="11">Novembre</option><option value="12">Dicembre</option>
@@ -73,23 +103,27 @@
             <option value="5">Maggio</option><option value="6">Giugno</option>
             <option value="7">Luglio</option><option value="8">Agosto</option>
         </select>
+        
         <label>Persona</label>
-        <select id="utente">
-            <option value="Antonello">Antonello</option>
-            <option value="Giusi">Giusi</option>
+        <select id="utente" onchange="cambiaColoreUtente()">
+            <option value="Antonello">Antonello (Celeste)</option>
+            <option value="Giusi">Giusi (Lilla)</option>
         </select>
+
         <div class="grid">
-            <div><label>Ore</label><input type="number" id="ore" placeholder="0" inputmode="numeric"></div>
+            <div><label>Ore Effettive</label><input type="number" id="ore" placeholder="0" inputmode="numeric"></div>
             <div><label>Abbuoni</label><input type="number" id="abbuoni" placeholder="0" inputmode="numeric"></div>
         </div>
+        <label>Studi Biblici</label>
+        <input type="number" id="studi" placeholder="0" inputmode="numeric">
         <button class="btn-save" onclick="aggiungiDati()">Salva Rapporto</button>
     </div>
 
     <div class="card">
-        <h2 id="titoloCronologia">Dettaglio</h2>
+        <h2 id="titoloCronologia">Dettaglio Mensile</h2>
         <div id="listaStorico"></div>
         <button class="btn-action" onclick="rimuoviUltimo()">🗑️ Elimina Ultimo</button>
-        <button class="btn-action" onclick="esportaDati()">💾 Esporta Backup</button>
+        <button class="btn-action" onclick="esportaDati()">💾 Esporta Backup (.json)</button>
         <button class="btn-action" onclick="document.getElementById('importFile').click()">📂 Importa Backup</button>
         <input type="file" id="importFile" style="display:none" onchange="importaDati(event)">
     </div>
@@ -100,21 +134,35 @@
 
     let db = JSON.parse(localStorage.getItem('rapporto_v7')) || [];
 
+    function cambiaColoreUtente() {
+        const utente = document.getElementById('utente').value;
+        document.body.style.backgroundColor = (utente === "Antonello") ? "var(--antonello-bg)" : "var(--giusi-bg)";
+    }
+
     function calcola() {
         const mesiServizio = [9, 10, 11, 12, 1, 2, 3, 4, 5, 6, 7, 8];
-        const meseCorrente = new Date().getMonth() + 1;
-        let mesiTrascorsi = mesiServizio.indexOf(meseCorrente) + 1 || 12;
+        const meseSelezionato = document.getElementById('mese').value;
+        const meseOggi = new Date().getMonth() + 1;
+        let mesiTrascorsi = mesiServizio.indexOf(meseOggi) + 1 || 12;
 
         ["Antonello", "Giusi"].forEach(user => {
-            let totaleOre = 0;
+            let totaleAnnuale = 0;
+            let totaleMeseUI = 0;
+
             mesiServizio.forEach(m => {
                 let oM = db.filter(v => v.utente === user && v.mese == m).reduce((s,v) => s + v.ore, 0);
                 let aM = db.filter(v => v.utente === user && v.mese == m).reduce((s,v) => s + v.abbuoni, 0);
-                totaleOre += (oM < 55) ? Math.min(55, oM + aM) : oM;
+                let finaleMese = oM;
+                if(finaleMese < 55) { finaleMese = Math.min(55, finaleMese + aM); }
+                totaleAnnuale += finaleMese;
+                if (m == meseSelezionato) { totaleMeseUI = finaleMese; }
             });
+
             const s = user === "Antonello" ? "A" : "G";
-            document.getElementById('ore'+s).innerText = totaleOre + "h";
-            const g600 = totaleOre - 600, gMed = totaleOre - (mesiTrascorsi * 50);
+            document.getElementById('ore'+s).innerText = totaleAnnuale + "h";
+            document.getElementById('mese'+s).innerText = totaleMeseUI;
+
+            const g600 = totaleAnnuale - 600, gMed = totaleAnnuale - (mesiTrascorsi * 50);
             document.getElementById('gap600'+s).innerText = (g600 > 0 ? "+" : "") + g600;
             document.getElementById('gap600'+s).className = g600 >= 0 ? "positivo" : "negativo";
             document.getElementById('gapMedia'+s).innerText = (gMed > 0 ? "+" : "") + gMed;
@@ -130,26 +178,35 @@
         lista.innerHTML = dati.length ? dati.slice().reverse().map(v => `
             <div class="history-item ${v.utente === 'Antonello' ? 'ant-row' : 'giu-row'}">
                 <span><b>${v.utente}</b><br><small>${v.timestamp}</small></span>
-                <span style="text-align:right"><b>${v.ore}h</b><br><small>Abb: ${v.abbuoni}</small></span>
-            </div>`).join('') : "Nessun dato.";
+                <span style="text-align:right"><b>${v.ore}h</b><br><small>Abb: ${v.abbuoni} | St: ${v.studi}</small></span>
+            </div>`).join('') : "<p style='text-align:center; color:gray;'>Nessun dato.</p>";
     }
 
     function aggiungiDati() {
+        const user = document.getElementById('utente').value;
+        const m = document.getElementById('mese').value;
+        const oIns = parseFloat(document.getElementById('ore').value || 0);
+        const aIns = parseFloat(document.getElementById('abbuoni').value || 0);
+
+        let oreMeseGiaPresenti = db.filter(v => v.utente === user && v.mese == m).reduce((s,v) => s + v.ore, 0);
+        if (aIns > 0 && (oreMeseGiaPresenti + oIns) >= 55) {
+            alert("⚠️ Abbuoni non conteggiati: hai già raggiunto 55h effettive.");
+        }
+
         const d = new Date();
         db.push({
-            utente: document.getElementById('utente').value,
-            mese: document.getElementById('mese').value,
-            ore: parseFloat(document.getElementById('ore').value || 0),
-            abbuoni: parseFloat(document.getElementById('abbuoni').value || 0),
-            timestamp: d.getDate()+"/"+(d.getMonth()+1)+" "+d.getHours()+":"+d.getMinutes()
+            utente: user, mese: m, ore: oIns, abbuoni: aIns, studi: parseInt(document.getElementById('studi').value || 0),
+            timestamp: d.getDate()+"/"+(d.getMonth()+1)+" "+d.getHours()+":"+d.getMinutes().toString().padStart(2,'0')
         });
+        
         localStorage.setItem('rapporto_v7', JSON.stringify(db));
+        document.getElementById('ore').value = ""; document.getElementById('abbuoni').value = ""; document.getElementById('studi').value = "";
         calcola();
     }
 
     function esportaDati() {
         const blob = new Blob([JSON.stringify(db)], {type: 'application/json'});
-        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'backup.json'; a.click();
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'backup_servizio.json'; a.click();
     }
 
     function importaDati(e) {
@@ -159,14 +216,18 @@
             db = JSON.parse(ev.target.result);
             localStorage.setItem('rapporto_v7', JSON.stringify(db));
             calcola();
-            alert("Dati importati!");
+            alert("✅ Backup caricato!");
         };
         reader.readAsText(file);
     }
 
-    function rimuoviUltimo() { if(confirm("Eliminare?") && db.length) { db.pop(); localStorage.setItem('rapporto_v7', JSON.stringify(db)); calcola(); } }
+    function rimuoviUltimo() { if(confirm("Eliminare ultimo?") && db.length) { db.pop(); localStorage.setItem('rapporto_v7', JSON.stringify(db)); calcola(); } }
 
-    window.onload = () => { document.getElementById('mese').value = new Date().getMonth() + 1; calcola(); };
+    window.onload = () => { 
+        document.getElementById('mese').value = new Date().getMonth() + 1; 
+        cambiaColoreUtente();
+        calcola(); 
+    };
 </script>
 </body>
 </html>
