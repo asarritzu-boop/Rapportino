@@ -1,4 +1,4 @@
-const CACHE_NAME = 'rapporto-v2';
+const CACHE_NAME = 'rapporto-v3';
 const assets = [
   './index.html',
   './manifest.json',
@@ -6,7 +6,6 @@ const assets = [
   './rapporti-192.png'
 ];
 
-// Installazione: salva i file nella cache
 self.addEventListener('install', e => {
   e.waitUntil(
     caches.open(CACHE_NAME).then(cache => {
@@ -15,7 +14,6 @@ self.addEventListener('install', e => {
   );
 });
 
-// Attivazione: pulisce vecchie cache se presenti
 self.addEventListener('activate', e => {
   e.waitUntil(
     caches.keys().then(keys => {
@@ -26,7 +24,6 @@ self.addEventListener('activate', e => {
   );
 });
 
-// Fetch: serve i file dalla cache se offline
 self.addEventListener('fetch', e => {
   e.respondWith(
     caches.match(e.request).then(res => {
