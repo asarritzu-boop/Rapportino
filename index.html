@@ -223,7 +223,7 @@
     </div>
 
     <div class="card">
-        <h2>Gestione Dati</h2>
+        <h2 id="titoloGestione">Gestione Dati</h2>
         <div id="listaStorico"></div>
         <button class="btn-action" onclick="esportaDati()">💾 Esporta Backup</button>
         <button class="btn-action" onclick="document.getElementById('importFile').click()">📂 Importa Backup</button>
@@ -234,7 +234,7 @@
 
 <div id="modalRiepilogo" class="modal" onclick="this.style.display='none'">
     <div class="modal-content" onclick="event.stopPropagation()">
-        <h2 style="margin-bottom: 15px; border-bottom: 2px solid var(--success);">Riepilogo Mesi Trascorsi</h2>
+        <h2 id="titoloRiepilogo" style="margin-bottom: 15px; border-bottom: 2px solid var(--success);">Riepilogo</h2>
         <div id="corpoRiepilogo"></div>
         <button class="btn-action" onclick="document.getElementById('modalRiepilogo').style.display='none'" style="margin-top:20px">Chiudi</button>
     </div>
@@ -260,6 +260,8 @@
             btnRiepilogo.style.backgroundColor = "var(--giusi-accent)";
             btnRiepilogo.style.color = "white";
         }
+        // Aggiorniamo la lista storico ogni volta che cambia l'utente
+        aggiornaLista();
     }
 
     function calcola() {
@@ -310,9 +312,15 @@
 
     function aggiornaLista() {
         const m = document.getElementById('mese').value;
+        const utenteCorrente = document.getElementById('utente').value;
         const lista = document.getElementById('listaStorico');
-        // Usiamo l'indice originale del DB per permettere eliminazioni/modifiche coerenti
-        const datiConIndice = db.map((v, i) => ({...v, originalIndex: i})).filter(v => v.mese == m);
+        const titoloGestione = document.getElementById('titoloGestione');
+
+        titoloGestione.innerText = "Gestione Dati: " + utenteCorrente;
+        
+        // Filtriamo i dati sia per MESE che per UTENTE SELEZIONATO
+        const datiConIndice = db.map((v, i) => ({...v, originalIndex: i}))
+                                .filter(v => v.mese == m && v.utente == utenteCorrente);
         
         lista.innerHTML = datiConIndice.length ? datiConIndice.reverse().map(v => `
             <div class="history-item" style="border-left:5px solid ${v.utente === 'Antonello' ? 'var(--antonello-accent)' : 'var(--giusi-accent)'}">
@@ -322,7 +330,7 @@
                     <button class="btn-icon" onclick="preparaModifica(${v.originalIndex})">✏️</button>
                     <button class="btn-icon" onclick="eliminaSingolo(${v.originalIndex})">🗑️</button>
                 </div>
-            </div>`).join('') : "<p style='text-align:center; color:gray; font-size:0.8rem;'>Nessun dato questo mese.</p>";
+            </div>`).join('') : `<p style='text-align:center; color:gray; font-size:0.8rem;'>Nessun dato per ${utenteCorrente} questo mese.</p>`;
     }
 
     function aggiungiDati() {
@@ -382,21 +390,25 @@
     function apriRiepilogo() {
         const mesiServizio = [9, 10, 11, 12, 1, 2, 3, 4, 5, 6, 7, 8];
         const meseOggi = new Date().getMonth() + 1;
-        let html = "";
-        ["Antonello", "Giusi"].forEach(user => {
-            html += `<h3 style="color:${user==='Antonello'?'var(--antonello-accent)':'var(--giusi-accent)'}; margin-top:15px">${user.toUpperCase()}</h3>`;
-            html += `<table class="table-riepilogo"><tr><th>Mese</th><th>Eff.</th><th>Abb.</th><th>Tot.</th></tr>`;
-            mesiServizio.forEach(m => {
-                let oreEff = db.filter(v => v.utente === user && v.mese == m).reduce((s,v) => s + v.ore, 0);
-                let abbDisp = db.filter(v => v.utente === user && v.mese == m).reduce((s,v) => s + v.abbuoni, 0);
-                let abbUsati = (oreEff < 55) ? Math.min(abbDisp, 55 - oreEff) : 0;
-                let tot = oreEff + abbUsati;
-                if(tot > 0 || m == meseOggi) {
-                    html += `<tr><td>${nomiMesi[m]}</td><td>${oreEff}h</td><td>${abbUsati}h</td><td><b>${tot}h</b></td></tr>`;
-                }
-            });
-            html += `</table>`;
+        const utenteSelezionato = document.getElementById('utente').value;
+        
+        document.getElementById('titoloRiepilogo').innerText = "Riepilogo: " + utenteSelezionato;
+        document.getElementById('titoloRiepilogo').style.borderColor = utenteSelezionato === "Antonello" ? "var(--antonello-accent)" : "var(--giusi-accent)";
+
+        let html = `<table class="table-riepilogo"><tr><th>Mese</th><th>Eff.</th><th>Abb.</th><th>Tot.</th></tr>`;
+        
+        mesiServizio.forEach(m => {
+            let oreEff = db.filter(v => v.utente === utenteSelezionato && v.mese == m).reduce((s,v) => s + v.ore, 0);
+            let abbDisp = db.filter(v => v.utente === utenteSelezionato && v.mese == m).reduce((s,v) => s + v.abbuoni, 0);
+            let abbUsati = (oreEff < 55) ? Math.min(abbDisp, 55 - oreEff) : 0;
+            let tot = oreEff + abbUsati;
+            
+            if(tot > 0 || m == meseOggi) {
+                html += `<tr><td>${nomiMesi[m]}</td><td>${oreEff}h</td><td>${abbUsati}h</td><td><b>${tot}h</b></td></tr>`;
+            }
         });
+        
+        html += `</table>`;
         document.getElementById('corpoRiepilogo').innerHTML = html;
         document.getElementById('modalRiepilogo').style.display = 'block';
     }
